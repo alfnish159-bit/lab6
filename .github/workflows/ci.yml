@@ -1,151 +1,114 @@
-name: CI/CD Full
+name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ main ]
-
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
 
 jobs:
   unit:
-    name: unit (${{ matrix.os }} / node ${{ matrix.node }})
+    name: unit (node ${{ matrix.node }} / ${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        node: [18.x, 20.x, 22.x]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node: [18, 20, 22]
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
           cache: npm
-      - run: npm ci
-      - run: npm run test:unit
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Unit tests (Jest)
+        run: npm run test:unit
 
   bdd:
-    name: bdd (${{ matrix.os }} / node ${{ matrix.node }})
+    name: bdd (node ${{ matrix.node }} / ${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        node: [18.x, 20.x, 22.x]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node: [18, 20, 22]
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
           cache: npm
-      - run: npm ci
-      - run: npm start &
-        shell: bash
-      - run: npx wait-on http://localhost:3000
-      - run: npm run bdd
-      - if: always()
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Run BDD tests (Cucumber)
+        run: npm run bdd
+
+      - name: Upload BDD report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: bdd-reports-${{ matrix.os }}-node-${{ matrix.node }}
-          path: |
-            report.html
-            allure-results/
+          name: bdd-report-${{ matrix.os }}-node-${{ matrix.node }}
+          path: report.html
 
   ui:
-    name: ui (${{ matrix.os }} / node ${{ matrix.node }})
+    name: ui (node ${{ matrix.node }} / ${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        node: [18.x, 20.x, 22.x]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node: [18, 20, 22]
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
           cache: npm
-      - run: npm ci
-      - run: npx playwright install --with-deps
-      - run: npm start &
-        shell: bash
-      - run: npx wait-on http://localhost:3000
-      - run: npm run test:ui
-      - if: always()
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Start server
+        run: |
+          npm start &
+          npx wait-on http://localhost:3000
+
+      - name: Run UI tests (Playwright)
+        run: npm run test:ui
+
+      - name: Upload Playwright report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ui-reports-${{ matrix.os }}-node-${{ matrix.node }}
+          name: ui-report-${{ matrix.os }}-node-${{ matrix.node }}
           path: |
             playwright-report/
             test-results/
-            allure-results/
 
-  pages:
-    name: publish allure to pages
+  notify:
+    name: telegram notify
     runs-on: ubuntu-latest
     needs: [unit, bdd, ui]
+    if: always()
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Send Telegram message
+        uses: appleboy/telegram-action@v0.1.1
         with:
-          node-version: 20.x
-          cache: npm
-      - run: npm ci
-
-      - uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-
-      - name: Merge allure-results
-        run: |
-          mkdir -p allure-results
-          find artifacts -type d -name "allure-results" -print0 | xargs -0 -I {} cp -R {}/* allure-results/ 2>/dev/null || true
-
-      - name: Generate allure-report
-        run: npm run allure:generate
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: allure-report
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
-
-  email_on_fail:
-    name: email on fail
-    runs-on: ubuntu-latest
-    needs: [unit, bdd, ui]
-    if: failure()
-    steps:
-      - name: Send email
-        uses: dawidd6/action-send-mail@v4
-        with:
-          server_address: ${{ secrets.SMTP_HOST }}
-          server_port: ${{ secrets.SMTP_PORT }}
-          username: ${{ secrets.SMTP_USER }}
-          password: ${{ secrets.SMTP_PASS }}
-          subject: "CI FAILED: ${{ github.repository }} (#${{ github.run_number }})"
-          to: ${{ secrets.MAIL_TO }}
-          from: ${{ secrets.MAIL_FROM }}
-          body: |
-            CI failed.
-
-            Repo: ${{ github.repository }}
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          message: |
+            CI finished: ${{ github.repository }}
             Branch: ${{ github.ref_name }}
-            Commit: ${{ github.sha }}
-
+            Results: unit=${{ needs.unit.result }}, bdd=${{ needs.bdd.result }}, ui=${{ needs.ui.result }}
             Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
