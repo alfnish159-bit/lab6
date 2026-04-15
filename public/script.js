@@ -1,35 +1,65 @@
-const $ = (id) => document.getElementById(id);
+const currentTempInput = document.getElementById('currentTemp');
+const targetTempInput = document.getElementById('targetTemp');
+const modeEco = document.getElementById('modeEco');
+const modeComfort = document.getElementById('modeComfort');
+const sendBtn = document.getElementById('sendBtn');
+const checkSensorBtn = document.getElementById('checkSensorBtn');
+const resultBox = document.getElementById('result');
+const errorBox = document.getElementById('error');
 
-$('send').addEventListener('click', async () => {
-  const temperature = Number($('temp').value);
-  const targetTemp = Number($('target').value);
-  const mode = document.querySelector('input[name="mode"]:checked')?.value;
+function setOk(text) {
+  resultBox.className = 'result ok';
+  resultBox.textContent = text;
+  errorBox.textContent = '';
+}
 
-  const out = $('result');
-  out.className = 'result';
-  out.textContent = '';
+function setError(text) {
+  errorBox.textContent = text;
+  resultBox.className = 'result';
+  resultBox.textContent = '';
+}
 
+function getMode() {
+  return modeComfort.checked ? 'Комфорт' : 'Эко';
+}
+
+async function postJson(url, body) {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const msg = data?.message || `HTTP ${res.status}`;
+    throw new Error(msg);
+  }
+  return data;
+}
+
+sendBtn.addEventListener('click', async () => {
   try {
-    const r1 = await fetch('/api/sensors/room-temp', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ temperature })
-    });
-    const j1 = await r1.json();
-    if (!r1.ok) throw new Error(j1.message || 'Ошибка датчика');
+    const currentTemp = Number(currentTempInput.value);
+    const targetTemp = Number(targetTempInput.value);
+    const mode = getMode();
 
-    const r2 = await fetch('/api/heating/control', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ targetTemp, mode })
-    });
-    const j2 = await r2.json();
-    if (!r2.ok) throw new Error(j2.message || 'Ошибка котла');
+    await postJson('/api/sensors/room-temp', { temperature: currentTemp });
+    const r = await postJson('/api/heating/control', { targetTemp, mode });
 
-    out.classList.add('ok');
-    out.textContent = `Отопление: ${j2.action === 'ON' ? 'Вкл' : 'Выкл'}`;
+    const human = r.action === 'ON' ? 'Вкл' : 'Выкл';
+    setOk(`Отопление: ${human}`);
   } catch (e) {
-    out.classList.add('err');
-    out.textContent = `Ошибка: ${e.message}`;
+    setError(e.message || String(e));
+  }
+});
+
+checkSensorBtn.addEventListener('click', async () => {
+  try {
+    const currentTemp = Number(currentTempInput.value);
+    const r = await postJson('/api/sensors/room-temp', { temperature: currentTemp });
+    setOk(`Температура датчика: ${r.temperature}`);
+  } catch (e) {
+    setError(e.message || String(e));
   }
 });
