@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Smart Heating</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="card">
+    <h1>Контроллер умного отопления</h1>
+
+    <label>
+      Температура в комнате
+      <input id="temp" type="number" step="0.01" placeholder="например 19.5" />
+    </label>
+
+    <fieldset>
+      <legend>Режим</legend>
+      <label><input type="radio" name="mode" value="Эко" checked /> Эко</label>
+      <label><input type="radio" name="mode" value="Комфорт" /> Комфорт</label>
+    </fieldset>
+
+    <label>
+      Целевая температура
+      <input id="target" type="number" step="0.01" value="20" />
+    </label>
+
+    <button id="send">Отправить команду</button>
+
+    <div id="result" class="result"></div>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

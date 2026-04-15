@@ -1,0 +1,26 @@
+{
+  "name": "lab6",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+  "start": "node server.js",
+  "bdd": "cucumber-js --format summary --format html:report.html",
+  "bdd:progress": "cucumber-js --format progress",
+  "test:ui": "npx playwright test",
+  "test:ui:headed": "npx playwright test --headed",
+  "test:ui:debug": "npx playwright test --debug",
+  "test:ui:report": "npx playwright show-report"
+},
+  "dependencies": {
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "@cucumber/cucumber": "^12.8.1",
+    "@playwright/test": "^1.59.1",
+    "jest": "^30.3.0",
+    "supertest": "^7.2.2",
+    "wait-on": "^9.0.5"
+  }
+}
