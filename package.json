@@ -5,24 +5,24 @@
   "main": "server.js",
   "type": "commonjs",
   "scripts": {
-  "start": "node server.js",
-  "test:unit": "jest",
-  "bdd": "cucumber-js --format summary --format html:report.html",
-  "test:ui": "npx playwright test",
-  "test:ui:report": "npx playwright show-report",
-  "test:all": "npm run test:unit && npm run bdd && npm run test:ui"
-},
+    "start": "node server.js",
+    "test:unit": "jest",
+    "bdd": "cucumber-js --format summary --format html:report.html",
+    "test:ui": "npx playwright test",
+    "test:ui:report": "npx playwright show-report",
+    "test:all": "npm run test:unit && npm run bdd && npm run test:ui"
+  },
   "dependencies": {
     "express": "^5.2.1"
   },
   "devDependencies": {
     "@cucumber/cucumber": "^12.8.1",
     "@playwright/test": "^1.59.1",
-    "jest": "^30.3.0",
-    "supertest": "^7.2.2",
-    "wait-on": "^9.0.5",
     "allure-commandline": "^2.32.0",
     "allure-cucumberjs": "^3.3.3",
-    "allure-playwright": "^2.15.1"
+    "allure-playwright": "^3.7.1",
+    "jest": "^30.3.0",
+    "supertest": "^7.2.2",
+    "wait-on": "^9.0.5"
   }
 }
