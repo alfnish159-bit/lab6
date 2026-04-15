@@ -5,14 +5,18 @@
   "main": "server.js",
   "type": "commonjs",
   "scripts": {
-  "start": "node server.js",
-  "bdd": "cucumber-js --format summary --format html:report.html",
-  "bdd:progress": "cucumber-js --format progress",
-  "test:ui": "npx playwright test",
-  "test:ui:headed": "npx playwright test --headed",
-  "test:ui:debug": "npx playwright test --debug",
-  "test:ui:report": "npx playwright show-report"
-},
+    "start": "node server.js",
+    "test:unit": "jest",
+    "bdd": "cucumber-js --format summary --format html:report.html",
+    "bdd:progress": "cucumber-js --format progress",
+    "test:ui": "npx playwright test",
+    "test:ui:headed": "npx playwright test --headed",
+    "test:ui:debug": "npx playwright test --debug",
+    "test:ui:report": "npx playwright show-report",
+    "test:all": "npm run test:unit && npm run bdd && npm run test:ui",
+    "allure:generate": "npx allure generate ./allure-results -o ./allure-report --clean",
+    "allure:open": "npx allure open ./allure-report"
+  },
   "dependencies": {
     "express": "^5.2.1"
   },
@@ -21,6 +25,9 @@
     "@playwright/test": "^1.59.1",
     "jest": "^30.3.0",
     "supertest": "^7.2.2",
-    "wait-on": "^9.0.5"
+    "wait-on": "^9.0.5",
+    "allure-commandline": "^2.32.0",
+    "allure-cucumberjs": "^3.3.3",
+    "allure-playwright": "^2.15.1"
   }
 }

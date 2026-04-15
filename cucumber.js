@@ -1,3 +1,8 @@
 module.exports = {
-  default: `features/**/*.feature --require features/step_definitions/**/*.js --format summary --format html:report.html`
+  default: [
+    '--require features/step_definitions/**/*.js',
+    '--require-module allure-cucumberjs',
+    '--format summary',
+    '--format html:report.html'
+  ].join(' ')
 };
